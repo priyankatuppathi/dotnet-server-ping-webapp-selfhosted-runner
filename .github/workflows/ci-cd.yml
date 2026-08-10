@@ -1,0 +1,30 @@
+name: Build, Test & Deploy .NET App
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-test-deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run tests
+        run: dotnet test --no-build --configuration Release
+
+      - name: Build Docker image
+        run: docker build --build-arg GIT_COMMIT=${{ github.sha }} -t coolapp .
+
+      - name: Deploy container
+        run: |
+          docker rm -f coolapp || true
+          docker run -d -p 8080:8080 --name coolapp coolapp
